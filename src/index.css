@@ -1,0 +1,265 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─── 字体 ───────────────────────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap');
+
+/* ─── 变量系统 ─────────────────────────────────────── */
+:root {
+  /* 默认：落日多巴胺 */
+  --c1: #FF6B6B;
+  --c2: #FFA07A;
+  --c3: #FFD93D;
+  --c4: #6BCB77;
+  --c5: #4D96FF;
+  --c6: #C084FC;
+  --text: #2d2016;
+  --text-light: #6b5c4d;
+  --bg: #fffaf7;
+  --card: rgba(255,255,255,0.8);
+  --border: rgba(0,0,0,0.06);
+  --radius: 24px;
+  --font-body: 'Noto Sans SC', sans-serif;
+  --font-display: 'Playfair Display', serif;
+  --gradient: linear-gradient(135deg, var(--c1), var(--c2), var(--c3));
+  --gradient2: linear-gradient(135deg, var(--c5), var(--c6));
+  --shadow: 0 8px 32px rgba(0,0,0,0.08);
+  --shadow-lg: 0 20px 60px rgba(0,0,0,0.12);
+}
+
+/* 主题2：薰衣草梦幻 */
+[data-theme="lavender"] {
+  --c1: #C084FC;
+  --c2: #F0ABFC;
+  --c3: #FDE68A;
+  --c4: #6EE7B7;
+  --c5: #93C5FD;
+  --c6: #F9A8D4;
+  --text: #2d1b4e;
+  --text-light: #6b5a8e;
+  --bg: #faf5ff;
+  --card: rgba(255,255,255,0.85);
+  --border: rgba(192,132,252,0.15);
+  --gradient: linear-gradient(135deg, var(--c1), var(--c2), var(--c6));
+  --gradient2: linear-gradient(135deg, var(--c5), var(--c1));
+  --shadow: 0 8px 32px rgba(192,132,252,0.15);
+  --shadow-lg: 0 20px 60px rgba(192,132,252,0.2);
+}
+
+/* 主题3：海洋清风 */
+[data-theme="ocean"] {
+  --c1: #38BDF8;
+  --c2: #7DD3FC;
+  --c3: #FDE68A;
+  --c4: #86EFAC;
+  --c5: #F472B6;
+  --c6: #A78BFA;
+  --text: #0c2d48;
+  --text-light: #4a7a9e;
+  --bg: #f0f9ff;
+  --card: rgba(255,255,255,0.85);
+  --border: rgba(56,189,248,0.15);
+  --gradient: linear-gradient(135deg, var(--c1), var(--c2), var(--c4));
+  --gradient2: linear-gradient(135deg, var(--c5), var(--c6));
+  --shadow: 0 8px 32px rgba(56,189,248,0.15);
+  --shadow-lg: 0 20px 60px rgba(56,189,248,0.2);
+}
+
+/* 主题4：薄荷清新 */
+[data-theme="mint"] {
+  --c1: #10B981;
+  --c2: #6EE7B7;
+  --c3: #FDE68A;
+  --c4: #FCA5A5;
+  --c5: #FCD34D;
+  --c6: #F9A8D4;
+  --text: #064e3b;
+  --text-light: #047857;
+  --bg: #f0fdf4;
+  --card: rgba(255,255,255,0.9);
+  --border: rgba(16,185,129,0.15);
+  --gradient: linear-gradient(135deg, var(--c1), var(--c2), var(--c4));
+  --gradient2: linear-gradient(135deg, var(--c6), var(--c5));
+  --shadow: 0 8px 32px rgba(16,185,129,0.1);
+  --shadow-lg: 0 20px 60px rgba(16,185,129,0.15);
+}
+
+/* ─── 基础 ────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+
+html {
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  transition: background 0.5s ease, color 0.3s ease;
+}
+
+/* ─── 滚动条 ──────────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover { background: var(--text-light); }
+
+/* ─── 工具类 ──────────────────────────────────────── */
+.gradient-text {
+  background: var(--gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.gradient-text2 {
+  background: var(--gradient2);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.glass {
+  background: var(--card);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--border);
+}
+
+.soft-shadow { box-shadow: var(--shadow); }
+.soft-shadow-lg { box-shadow: var(--shadow-lg); }
+
+/* ─── 悬浮动效 ───────────────────────────────────── */
+.hover-lift {
+  transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease;
+}
+.hover-lift:hover {
+  transform: translateY(-6px) scale(1.02);
+  box-shadow: var(--shadow-lg);
+}
+
+/* ─── 按钮 ───────────────────────────────────────── */
+.btn-primary {
+  background: var(--gradient);
+  color: white;
+  font-weight: 600;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+}
+.btn-primary:hover {
+  transform: scale(1.05);
+  box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+}
+.btn-primary:active {
+  transform: scale(0.97);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--text);
+  border: 1.5px solid var(--border);
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+.btn-ghost:hover {
+  background: var(--card);
+  border-color: var(--c1);
+  color: var(--c1);
+}
+
+/* ─── 输入框 ─────────────────────────────────────── */
+.input-field {
+  width: 100%;
+  padding: 12px 16px;
+  background: var(--bg);
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 14px;
+  transition: all 0.3s ease;
+  outline: none;
+}
+.input-field:focus {
+  border-color: var(--c1);
+  box-shadow: 0 0 0 3px rgba(255,107,107,0.1);
+}
+.input-field::placeholder { color: var(--text-light); opacity: 0.5; }
+
+/* ─── 拖拽区 ─────────────────────────────────────── */
+.drop-zone {
+  border: 2px dashed var(--border);
+  border-radius: var(--radius);
+  padding: 40px 20px;
+  text-align: center;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+.drop-zone:hover,
+.drop-zone.drag-over {
+  border-color: var(--c1);
+  background: rgba(255,107,107,0.04);
+}
+
+/* ─── 卡片网格 ───────────────────────────────────── */
+.photo-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+@media (min-width: 768px) {
+  .photo-grid { grid-template-columns: repeat(4, 1fr); gap: 16px; }
+}
+
+/* ─── 时间线 ─────────────────────────────────────── */
+.timeline-dot {
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  background: var(--gradient);
+  box-shadow: 0 0 0 4px var(--bg), 0 0 0 5px var(--border);
+}
+
+/* ─── 情书纸张 ───────────────────────────────────── */
+.letter-paper {
+  background: linear-gradient(135deg, #fffdf9 0%, #fff9f0 100%);
+  box-shadow: 0 4px 30px rgba(0,0,0,0.08);
+}
+
+/* ─── 设置面板 ───────────────────────────────────── */
+.settings-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.4);
+  backdrop-filter: blur(4px);
+  z-index: 100;
+}
+
+.settings-panel {
+  position: fixed;
+  top: 0; right: 0; bottom: 0;
+  width: min(480px, 95vw);
+  background: var(--bg);
+  z-index: 101;
+  overflow-y: auto;
+  box-shadow: -20px 0 60px rgba(0,0,0,0.15);
+}
+
+/* ─── 可编辑文字 ────────────────────────────────── */
+[contenteditable] {
+  outline: none;
+  border-radius: 4px;
+  transition: background 0.2s;
+}
+[contenteditable]:hover {
+  background: rgba(255,107,107,0.05);
+}
+[contenteditable]:focus {
+  background: rgba(255,107,107,0.08);
+  box-shadow: 0 0 0 2px var(--c1);
+}
