@@ -3,4 +3,7 @@ dist/
 *.log
 .env
 .env.local
+.env.production
 .DS_Store
+vite-error.txt
+vite-output.txt
