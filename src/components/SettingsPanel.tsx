@@ -418,6 +418,7 @@ function AlbumsTab({ albums, photos, addAlbum, removeAlbum, updateAlbum, reorder
       coverPhotoId: null,
       sortOrder: albums.length,
       isPinned: false,
+      isPrivate: false,
       createdAt: new Date().toISOString(),
     })
     setNewAlbum({ name: '', emoji: '📁' })
@@ -595,6 +596,7 @@ function VideoAlbumsTab({ albums, videos, addVideoAlbum, removeVideoAlbum, updat
       coverVideoId: null,
       sortOrder: albums.length,
       isPinned: false,
+      isPrivate: false,
       createdAt: new Date().toISOString(),
     })
     setNewAlbum({ name: '', emoji: '🎬' })
@@ -758,6 +760,8 @@ function PhotosTab({ addPhoto, removePhoto, photos, albums }: { addPhoto: (p: an
           url: e.target?.result as string,
           date: new Date().toISOString().split('T')[0].replace(/-/g, '.'),
           caption: file.name.replace(/\.[^/.]+$/, ''),
+          albumId: null,
+          isPrivate: false,
         })
       }
       reader.readAsDataURL(file)
@@ -822,6 +826,8 @@ function VideosTab({ addVideo, removeVideo, videos, videoAlbums }: { addVideo: (
         date: new Date().toISOString().split('T')[0].replace(/-/g, '.'),
         title: file.name.replace(/\.[^/.]+$/, ''),
         isAudio,
+        albumId: null,
+        isPrivate: false,
       })
     })
   }, [addVideo])
@@ -879,6 +885,7 @@ function TimelineTab({ data, addItem, updateItem, removeItem }: {
       id: Date.now().toString(),
       ...newItem,
       date: newItem.date || new Date().toISOString().split('T')[0].replace(/-/g, '.'),
+      isPrivate: false,
     })
     setNewItem({ date: '', title: '', description: '' })
   }
@@ -942,6 +949,7 @@ function LettersTab({ data, addLetter, updateLetter, removeLetter }: {
       ...newLetter,
       date: newLetter.date || new Date().toISOString().split('T')[0].replace(/-/g, '.'),
       content: newLetter.content || '（无内容）',
+      isPrivate: false,
     })
     setNewLetter({ title: '', date: '', content: '' })
   }
