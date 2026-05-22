@@ -338,6 +338,7 @@ function AlbumsPage({ isAuthenticated }: { isAuthenticated: boolean }) {
       coverPhotoId: null,
       sortOrder: data.albums.length,
       isPinned: false,
+      isPrivate: false,
       createdAt: new Date().toISOString(),
     })
     setFormData({ name: '', emoji: '📷' })
@@ -544,6 +545,7 @@ function AlbumDetailPage({ album, photos, allAlbums, onBack, isAuthenticated }: 
           date: new Date().toISOString().split('T')[0].replace(/-/g, '.'),
           caption: file.name.replace(/\.[^/.]+$/, ''),
           albumId: album.id,
+          isPrivate: false,
         })
       }
       reader.readAsDataURL(file)
@@ -843,6 +845,7 @@ function GalleryPage({ isAuthenticated }: { isAuthenticated: boolean }) {
           date: new Date().toISOString().split('T')[0].replace(/-/g, '.'),
           caption: file.name.replace(/\.[^/.]+$/, ''),
           albumId: null,
+          isPrivate: false,
         })
       }
       reader.readAsDataURL(file)
@@ -1204,6 +1207,7 @@ function VideoAlbumsPage({ isAuthenticated }: { isAuthenticated: boolean }) {
       coverVideoId: null,
       sortOrder: data.videoAlbums.length,
       isPinned: false,
+      isPrivate: false,
       createdAt: new Date().toISOString(),
     })
     setFormData({ name: '', emoji: '🎬' })
@@ -1414,6 +1418,7 @@ function VideoAlbumDetailPage({ album, videos, allAlbums, onBack }: {
         title: file.name.replace(/\.[^/.]+$/, ''),
         isAudio,
         albumId: album.id,
+        isPrivate: false,
       })
     })
   }, [addVideo, album.id])
@@ -1666,6 +1671,7 @@ function TimelinePage({ isAuthenticated }: { isAuthenticated: boolean }) {
       date: formData.date,
       title: formData.title,
       description: formData.description,
+      isPrivate: false,
     })
     setFormData({ date: '', title: '', description: '' })
     setShowForm(false)
@@ -1832,6 +1838,7 @@ function LettersPage({ isAuthenticated }: { isAuthenticated: boolean }) {
       title: formData.title,
       date: new Date().toISOString().split('T')[0].replace(/-/g, '.'),
       content: formData.content,
+      isPrivate: false,
     })
     setFormData({ title: '', content: '' })
     setShowForm(false)
