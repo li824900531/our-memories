@@ -1,5 +1,4 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react'
-import { supabase } from '../supabase'
 
 export type AuthMode = 'none' | 'guest' | 'authenticated'
 
@@ -43,27 +42,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }))
   }
 
+  // 本地硬编码账号（国内无需 VPN 连 Supabase）
+  const ACCOUNTS = [
+    { username: 'maidou', password: 'maidou666' },
+  ]
+
   const login = async (username: string, password: string): Promise<{ success: boolean; error?: string }> => {
-    try {
-      const { data, error } = await supabase
-        .from('site_auth')
-        .select('*')
-        .eq('username', username)
-        .single()
+    const account = ACCOUNTS.find(a => a.username === username)
 
-      if (error || !data) {
-        return { success: false, error: '账号不存在' }
-      }
-
-      if (data.password !== password) {
-        return { success: false, error: '密码错误' }
-      }
-
-      persistAuth('authenticated')
-      return { success: true }
-    } catch {
-      return { success: false, error: '登录失败，请检查网络' }
+    if (!account) {
+      return { success: false, error: '账号不存在' }
     }
+
+    if (account.password !== password) {
+      return { success: false, error: '密码错误' }
+    }
+
+    persistAuth('authenticated')
+    return { success: true }
   }
 
   const logout = () => {
