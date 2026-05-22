@@ -399,7 +399,7 @@ function AlbumsTab({ albums, photos, addAlbum, removeAlbum, updateAlbum, reorder
   reorderAlbums: (albums: Album[]) => void
   togglePinAlbum: (id: string) => void
 }) {
-  const [newAlbum, setNewAlbum] = useState({ name: '', emoji: '📁' })
+  const [newAlbum, setNewAlbum] = useState({ name: '', emoji: '📁', isPrivate: false })
   const [editingId, setEditingId] = useState<string | null>(null)
   const [draggingId, setDraggingId] = useState<string | null>(null)
 
@@ -418,10 +418,10 @@ function AlbumsTab({ albums, photos, addAlbum, removeAlbum, updateAlbum, reorder
       coverPhotoId: null,
       sortOrder: albums.length,
       isPinned: false,
-      isPrivate: false,
+      isPrivate: newAlbum.isPrivate,
       createdAt: new Date().toISOString(),
     })
-    setNewAlbum({ name: '', emoji: '📁' })
+    setNewAlbum({ name: '', emoji: '📁', isPrivate: false })
   }
 
   // 拖拽排序
@@ -466,6 +466,15 @@ function AlbumsTab({ albums, photos, addAlbum, removeAlbum, updateAlbum, reorder
           />
           <button onClick={handleAdd} className="btn-primary px-4 py-2 rounded-xl text-sm">创建</button>
         </div>
+        <label className="flex items-center gap-2 cursor-pointer text-sm mt-2" style={{ color: 'var(--text-light)' }}>
+          <input
+            type="checkbox"
+            checked={newAlbum.isPrivate}
+            onChange={e => setNewAlbum(s => ({ ...s, isPrivate: e.target.checked }))}
+            className="rounded"
+          />
+          🔒 设为私密（访客不可见）
+        </label>
       </div>
 
       {/* 提示文字 */}
@@ -579,7 +588,7 @@ function VideoAlbumsTab({ albums, videos, addVideoAlbum, removeVideoAlbum, updat
   reorderVideoAlbums: (albums: VideoAlbum[]) => void
   togglePinVideoAlbum: (id: string) => void
 }) {
-  const [newAlbum, setNewAlbum] = useState({ name: '', emoji: '🎬' })
+  const [newAlbum, setNewAlbum] = useState({ name: '', emoji: '🎬', isPrivate: false })
   const [draggingId, setDraggingId] = useState<string | null>(null)
 
   const sortedAlbums = [...albums].sort((a, b) => {
@@ -596,10 +605,10 @@ function VideoAlbumsTab({ albums, videos, addVideoAlbum, removeVideoAlbum, updat
       coverVideoId: null,
       sortOrder: albums.length,
       isPinned: false,
-      isPrivate: false,
+      isPrivate: newAlbum.isPrivate,
       createdAt: new Date().toISOString(),
     })
-    setNewAlbum({ name: '', emoji: '🎬' })
+    setNewAlbum({ name: '', emoji: '🎬', isPrivate: false })
   }
 
   const handleDragStart = (id: string) => setDraggingId(id)
@@ -748,6 +757,7 @@ function VideoAlbumsTab({ albums, videos, addVideoAlbum, removeVideoAlbum, updat
 function PhotosTab({ addPhoto, removePhoto, photos, albums }: { addPhoto: (p: any) => void; removePhoto: (id: string) => void; photos: any[]; albums: Album[] }) {
   const fileRef = useRef<HTMLInputElement>(null)
   const [dragging, setDragging] = useState(false)
+  const [defaultPrivate, setDefaultPrivate] = useState(false)
 
   const handleFiles = useCallback((files: FileList | null) => {
     if (!files) return
@@ -761,7 +771,7 @@ function PhotosTab({ addPhoto, removePhoto, photos, albums }: { addPhoto: (p: an
           date: new Date().toISOString().split('T')[0].replace(/-/g, '.'),
           caption: file.name.replace(/\.[^/.]+$/, ''),
           albumId: null,
-          isPrivate: false,
+          isPrivate: defaultPrivate,
         })
       }
       reader.readAsDataURL(file)
@@ -770,6 +780,17 @@ function PhotosTab({ addPhoto, removePhoto, photos, albums }: { addPhoto: (p: an
 
   return (
     <div className="space-y-5">
+      {/* 默认私密开关 */}
+      <label className="flex items-center gap-2 cursor-pointer text-sm" style={{ color: 'var(--text-light)' }}>
+        <input
+          type="checkbox"
+          checked={defaultPrivate}
+          onChange={e => setDefaultPrivate(e.target.checked)}
+          className="rounded"
+        />
+        🔒 默认设为私密（访客不可见）
+      </label>
+
       {/* 拖拽上传区 */}
       <div
         className={`drop-zone ${dragging ? 'drag-over' : ''}`}
@@ -812,6 +833,7 @@ function PhotosTab({ addPhoto, removePhoto, photos, albums }: { addPhoto: (p: an
 function VideosTab({ addVideo, removeVideo, videos, videoAlbums }: { addVideo: (v: any) => void; removeVideo: (id: string) => void; videos: any[]; videoAlbums: VideoAlbum[] }) {
   const fileRef = useRef<HTMLInputElement>(null)
   const [dragging, setDragging] = useState(false)
+  const [defaultPrivate, setDefaultPrivate] = useState(false)
 
   const handleFiles = useCallback((files: FileList | null) => {
     if (!files) return
@@ -827,7 +849,7 @@ function VideosTab({ addVideo, removeVideo, videos, videoAlbums }: { addVideo: (
         title: file.name.replace(/\.[^/.]+$/, ''),
         isAudio,
         albumId: null,
-        isPrivate: false,
+        isPrivate: defaultPrivate,
       })
     })
   }, [addVideo])
@@ -877,7 +899,7 @@ function TimelineTab({ data, addItem, updateItem, removeItem }: {
   updateItem: (id: string, item: any) => void
   removeItem: (id: string) => void
 }) {
-  const [newItem, setNewItem] = useState({ date: '', title: '', description: '' })
+  const [newItem, setNewItem] = useState({ date: '', title: '', description: '', isPrivate: false })
 
   const handleAdd = () => {
     if (!newItem.title.trim()) return
@@ -885,9 +907,9 @@ function TimelineTab({ data, addItem, updateItem, removeItem }: {
       id: Date.now().toString(),
       ...newItem,
       date: newItem.date || new Date().toISOString().split('T')[0].replace(/-/g, '.'),
-      isPrivate: false,
+      isPrivate: newItem.isPrivate,
     })
-    setNewItem({ date: '', title: '', description: '' })
+    setNewItem({ date: '', title: '', description: '', isPrivate: false })
   }
 
   return (
@@ -899,6 +921,15 @@ function TimelineTab({ data, addItem, updateItem, removeItem }: {
           <input className="input-field" placeholder="日期 如：2024.06.01" value={newItem.date} onChange={e => setNewItem(s => ({ ...s, date: e.target.value }))} />
           <input className="input-field" placeholder="事件标题" value={newItem.title} onChange={e => setNewItem(s => ({ ...s, title: e.target.value }))} />
           <input className="input-field" placeholder="事件描述" value={newItem.description} onChange={e => setNewItem(s => ({ ...s, description: e.target.value }))} />
+          <label className="flex items-center gap-2 cursor-pointer text-sm" style={{ color: 'var(--text-light)' }}>
+            <input
+              type="checkbox"
+              checked={newItem.isPrivate}
+              onChange={e => setNewItem(s => ({ ...s, isPrivate: e.target.checked }))}
+              className="rounded"
+            />
+            🔒 设为私密（访客不可见）
+          </label>
           <button onClick={handleAdd} className="btn-primary w-full py-3 rounded-xl text-sm">添加</button>
         </div>
       </div>
@@ -940,7 +971,7 @@ function LettersTab({ data, addLetter, updateLetter, removeLetter }: {
   updateLetter: (id: string, letter: Partial<Letter>) => void
   removeLetter: (id: string) => void
 }) {
-  const [newLetter, setNewLetter] = useState({ title: '', date: '', content: '' })
+  const [newLetter, setNewLetter] = useState({ title: '', date: '', content: '', isPrivate: false })
 
   const handleAdd = () => {
     if (!newLetter.title.trim()) return
@@ -949,9 +980,9 @@ function LettersTab({ data, addLetter, updateLetter, removeLetter }: {
       ...newLetter,
       date: newLetter.date || new Date().toISOString().split('T')[0].replace(/-/g, '.'),
       content: newLetter.content || '（无内容）',
-      isPrivate: false,
+      isPrivate: newLetter.isPrivate,
     })
-    setNewLetter({ title: '', date: '', content: '' })
+    setNewLetter({ title: '', date: '', content: '', isPrivate: false })
   }
 
   return (
@@ -962,6 +993,15 @@ function LettersTab({ data, addLetter, updateLetter, removeLetter }: {
           <input className="input-field" placeholder="情书标题" value={newLetter.title} onChange={e => setNewLetter(s => ({ ...s, title: e.target.value }))} />
           <input className="input-field" placeholder="日期" value={newLetter.date} onChange={e => setNewLetter(s => ({ ...s, date: e.target.value }))} />
           <textarea className="input-field resize-none" rows={4} placeholder="情书内容" value={newLetter.content} onChange={e => setNewLetter(s => ({ ...s, content: e.target.value }))} />
+          <label className="flex items-center gap-2 cursor-pointer text-sm" style={{ color: 'var(--text-light)' }}>
+            <input
+              type="checkbox"
+              checked={newLetter.isPrivate}
+              onChange={e => setNewLetter(s => ({ ...s, isPrivate: e.target.checked }))}
+              className="rounded"
+            />
+            🔒 设为私密（访客不可见）
+          </label>
           <button onClick={handleAdd} className="btn-primary w-full py-3 rounded-xl text-sm">添加</button>
         </div>
       </div>

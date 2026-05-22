@@ -137,6 +137,12 @@ interface SettingsContextValue {
   updateVideoAlbum: (id: string, album: Partial<VideoAlbum>) => void
   reorderVideoAlbums: (albums: VideoAlbum[]) => void
   togglePinVideoAlbum: (id: string) => void
+  togglePrivateAlbum: (id: string) => void
+  togglePrivateVideoAlbum: (id: string) => void
+  togglePrivatePhoto: (id: string) => void
+  togglePrivateVideo: (id: string) => void
+  togglePrivateTimelineItem: (id: string) => void
+  togglePrivateLetter: (id: string) => void
   addPhoto: (photo: Photo) => void
   removePhoto: (id: string) => void
   updatePhoto: (id: string, photo: Partial<Photo>) => void
@@ -383,6 +389,43 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     if (current) supabaseUpsert('video_albums', { ...current, is_pinned: !current.isPinned })
   }
 
+  // 私有切换
+  const togglePrivateAlbum = (id: string) => {
+    setData(d => ({ ...d, albums: d.albums.map(a => a.id === id ? { ...a, isPrivate: !a.isPrivate } : a) }))
+    const current = data.albums.find(a => a.id === id)
+    if (current) supabaseUpsert('albums', { ...current, is_private: !current.isPrivate })
+  }
+
+  const togglePrivateVideoAlbum = (id: string) => {
+    setData(d => ({ ...d, videoAlbums: d.videoAlbums.map(a => a.id === id ? { ...a, isPrivate: !a.isPrivate } : a) }))
+    const current = data.videoAlbums.find(a => a.id === id)
+    if (current) supabaseUpsert('video_albums', { ...current, is_private: !current.isPrivate })
+  }
+
+  const togglePrivatePhoto = (id: string) => {
+    setData(d => ({ ...d, photos: d.photos.map(p => p.id === id ? { ...p, isPrivate: !p.isPrivate } : p) }))
+    const current = data.photos.find(p => p.id === id)
+    if (current) supabaseUpsert('photos', { ...current, is_private: !current.isPrivate })
+  }
+
+  const togglePrivateVideo = (id: string) => {
+    setData(d => ({ ...d, videos: d.videos.map(v => v.id === id ? { ...v, isPrivate: !v.isPrivate } : v) }))
+    const current = data.videos.find(v => v.id === id)
+    if (current) supabaseUpsert('videos', { ...current, is_private: !current.isPrivate })
+  }
+
+  const togglePrivateTimelineItem = (id: string) => {
+    setData(d => ({ ...d, timeline: d.timeline.map(t => t.id === id ? { ...t, isPrivate: !t.isPrivate } : t) }))
+    const current = data.timeline.find(t => t.id === id)
+    if (current) supabaseUpsert('timeline', { ...current, is_private: !current.isPrivate })
+  }
+
+  const togglePrivateLetter = (id: string) => {
+    setData(d => ({ ...d, letters: d.letters.map(l => l.id === id ? { ...l, isPrivate: !l.isPrivate } : l) }))
+    const current = data.letters.find(l => l.id === id)
+    if (current) supabaseUpsert('letters', { ...current, is_private: !current.isPrivate })
+  }
+
   // 照片
   const addPhoto = (photo: Photo) => {
     setData(d => ({ ...d, photos: [photo, ...d.photos] }))
@@ -497,6 +540,12 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         updateVideoAlbum,
         reorderVideoAlbums,
         togglePinVideoAlbum,
+        togglePrivateAlbum,
+        togglePrivateVideoAlbum,
+        togglePrivatePhoto,
+        togglePrivateVideo,
+        togglePrivateTimelineItem,
+        togglePrivateLetter,
         addPhoto,
         removePhoto,
         updatePhoto,

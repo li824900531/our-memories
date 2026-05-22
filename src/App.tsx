@@ -297,11 +297,11 @@ function HomePage({ isAuthenticated }: { isAuthenticated: boolean }) {
    相册册页面（展示所有相册卡片，类似QQ空间）
 ════════════════════════════════════════════════ */
 function AlbumsPage({ isAuthenticated }: { isAuthenticated: boolean }) {
-  const { data, addAlbum, removeAlbum, updateAlbum } = useSettings()
+  const { data, addAlbum, removeAlbum, updateAlbum, togglePrivateAlbum } = useSettings()
   const [currentPage, setCurrentPage] = useState<'list' | 'detail'>('list')
   const [activeAlbumId, setActiveAlbumId] = useState<string | null>(null)
   const [showForm, setShowForm] = useState(false)
-  const [formData, setFormData] = useState({ name: '', emoji: '📷' })
+  const [formData, setFormData] = useState({ name: '', emoji: '📷', isPrivate: false })
 
   // 过滤数据：访客模式隐藏私密内容
   const visibleAlbums = isAuthenticated ? data.albums : data.albums.filter(a => !a.isPrivate)
@@ -338,10 +338,10 @@ function AlbumsPage({ isAuthenticated }: { isAuthenticated: boolean }) {
       coverPhotoId: null,
       sortOrder: data.albums.length,
       isPinned: false,
-      isPrivate: false,
+      isPrivate: formData.isPrivate,
       createdAt: new Date().toISOString(),
     })
-    setFormData({ name: '', emoji: '📷' })
+    setFormData({ name: '', emoji: '📷', isPrivate: false })
     setShowForm(false)
   }
 
@@ -418,6 +418,17 @@ function AlbumsPage({ isAuthenticated }: { isAuthenticated: boolean }) {
                     取消
                   </button>
                 </div>
+                <div className="mt-3">
+                  <label className="flex items-center gap-2 cursor-pointer text-sm" style={{ color: 'var(--text-light)' }}>
+                    <input
+                      type="checkbox"
+                      checked={formData.isPrivate}
+                      onChange={e => setFormData({ ...formData, isPrivate: e.target.checked })}
+                      className="rounded"
+                    />
+                    🔒 设为私密（访客不可见）
+                  </label>
+                </div>
               </motion.div>
             )}
           </motion.div>
@@ -472,14 +483,23 @@ function AlbumsPage({ isAuthenticated }: { isAuthenticated: boolean }) {
                           🔒
                         </div>
                       )}
-                      {/* 删除按钮 - 仅登录可见 */}
+                      {/* 操作按钮 - 仅登录可见（hover） */} 
                       {isAuthenticated && (
-                        <button
-                          onClick={(e) => handleDelete(album.id, e)}
-                          className="absolute top-2 right-2 w-8 h-8 rounded-full bg-black/50 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-sm"
-                        >
-                          🗑
-                        </button>
+                        <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button
+                            onClick={(e) => { e.stopPropagation(); togglePrivateAlbum(album.id) }}
+                            className="w-8 h-8 rounded-full bg-black/50 text-white flex items-center justify-center text-xs"
+                            title={album.isPrivate ? '设为公开' : '设为私密'}
+                          >
+                            {album.isPrivate ? '🔓' : '🔒'}
+                          </button>
+                          <button
+                            onClick={(e) => handleDelete(album.id, e)}
+                            className="w-8 h-8 rounded-full bg-black/50 text-white flex items-center justify-center text-sm"
+                          >
+                            🗑
+                          </button>
+                        </div>
                       )}
                       {/* 信息 */}
                       <div className="absolute bottom-0 left-0 right-0 p-4">
@@ -524,7 +544,7 @@ function AlbumDetailPage({ album, photos, allAlbums, onBack, isAuthenticated }: 
   onBack: () => void
   isAuthenticated: boolean
 }) {
-  const { data, addPhoto, removePhoto, updatePhoto, movePhotoToAlbum, updateAlbum } = useSettings()
+  const { data, addPhoto, removePhoto, updatePhoto, movePhotoToAlbum, updateAlbum, togglePrivatePhoto } = useSettings()
   const [selected, setSelected] = useState<any>(null)
   const [showAlbumPicker, setShowAlbumPicker] = useState<string | null>(null)
   const [contextMenu, setContextMenu] = useState<{ photo: any; x: number; y: number } | null>(null)
@@ -701,6 +721,10 @@ function AlbumDetailPage({ album, photos, allAlbums, onBack, isAuthenticated }: 
                   updateAlbum(album.id, { coverPhotoId: contextMenu.photo.id })
                   setContextMenu(null)
                 }},
+                { label: contextMenu.photo.isPrivate ? '🔓 设为公开' : '🔒 设为私密', action: () => {
+                  togglePrivatePhoto(contextMenu.photo.id)
+                  setContextMenu(null)
+                }},
                 { label: '📂 移动到其他相册', action: () => {
                   setShowAlbumPicker(contextMenu.photo.id)
                   setContextMenu(null)
@@ -820,7 +844,7 @@ function AlbumDetailPage({ album, photos, allAlbums, onBack, isAuthenticated }: 
    照片管理页（查看全部照片）
 ════════════════════════════════════════════════ */
 function GalleryPage({ isAuthenticated }: { isAuthenticated: boolean }) {
-  const { data, addPhoto, removePhoto, updatePhoto, movePhotoToAlbum, updateAlbum } = useSettings()
+  const { data, addPhoto, removePhoto, updatePhoto, movePhotoToAlbum, updateAlbum, togglePrivatePhoto } = useSettings()
   const [selected, setSelected] = useState<any>(null)
   const [showAlbumPicker, setShowAlbumPicker] = useState<string | null>(null)
   const [contextMenu, setContextMenu] = useState<{ photo: any; x: number; y: number } | null>(null)
@@ -1046,6 +1070,10 @@ function GalleryPage({ isAuthenticated }: { isAuthenticated: boolean }) {
                   setShowAlbumPicker(contextMenu.photo.id)
                   setContextMenu(null)
                 }},
+                { label: contextMenu.photo.isPrivate ? '🔓 设为公开' : '🔒 设为私密', action: () => {
+                  togglePrivatePhoto(contextMenu.photo.id)
+                  setContextMenu(null)
+                }},
                 { label: '✏️ 修改描述', action: () => {
                   const newCaption = prompt('修改描述', contextMenu.photo.caption)
                   if (newCaption !== null) updatePhoto(contextMenu.photo.id, { caption: newCaption })
@@ -1170,11 +1198,11 @@ function GalleryPage({ isAuthenticated }: { isAuthenticated: boolean }) {
    视频册页面（展示所有视频相册卡片）
 ════════════════════════════════════════════════ */
 function VideoAlbumsPage({ isAuthenticated }: { isAuthenticated: boolean }) {
-  const { data, addVideoAlbum, removeVideoAlbum } = useSettings()
+  const { data, addVideoAlbum, removeVideoAlbum, togglePrivateVideoAlbum } = useSettings()
   const [currentPage, setCurrentPage] = useState<'list' | 'detail'>('list')
   const [activeAlbumId, setActiveAlbumId] = useState<string | null>(null)
   const [showForm, setShowForm] = useState(false)
-  const [formData, setFormData] = useState({ name: '', emoji: '🎬' })
+  const [formData, setFormData] = useState({ name: '', emoji: '🎬', isPrivate: false })
 
   const visibleVideoAlbums = isAuthenticated ? data.videoAlbums : data.videoAlbums.filter(a => !a.isPrivate)
   const visibleVideos = isAuthenticated ? data.videos : data.videos.filter(v => !v.isPrivate)
@@ -1207,10 +1235,10 @@ function VideoAlbumsPage({ isAuthenticated }: { isAuthenticated: boolean }) {
       coverVideoId: null,
       sortOrder: data.videoAlbums.length,
       isPinned: false,
-      isPrivate: false,
+      isPrivate: formData.isPrivate,
       createdAt: new Date().toISOString(),
     })
-    setFormData({ name: '', emoji: '🎬' })
+    setFormData({ name: '', emoji: '🎬', isPrivate: false })
     setShowForm(false)
   }
 
@@ -1287,6 +1315,17 @@ function VideoAlbumsPage({ isAuthenticated }: { isAuthenticated: boolean }) {
                     取消
                   </button>
                 </div>
+                <div className="mt-3">
+                  <label className="flex items-center gap-2 cursor-pointer text-sm" style={{ color: 'var(--text-light)' }}>
+                    <input
+                      type="checkbox"
+                      checked={formData.isPrivate}
+                      onChange={e => setFormData({ ...formData, isPrivate: e.target.checked })}
+                      className="rounded"
+                    />
+                    🔒 设为私密（访客不可见）
+                  </label>
+                </div>
               </motion.div>
             )}
           </motion.div>
@@ -1334,13 +1373,30 @@ function VideoAlbumsPage({ isAuthenticated }: { isAuthenticated: boolean }) {
                           📌
                         </div>
                       )}
-                      {/* 删除按钮 */}
-                      <button
-                        onClick={(e) => handleDelete(album.id, e)}
-                        className="absolute top-2 right-2 w-8 h-8 rounded-full bg-black/50 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-sm"
-                      >
-                        🗑
-                      </button>
+                      {/* 私密标签 */}
+                      {album.isPrivate && (
+                        <div className="absolute top-2 left-2 px-2 py-0.5 rounded-full bg-gray-700 text-white text-xs font-medium">
+                          🔒
+                        </div>
+                      )}
+                      {/* 操作按钮 - 仅登录可见（hover） */}
+                      {isAuthenticated && (
+                        <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button
+                            onClick={(e) => { e.stopPropagation(); togglePrivateVideoAlbum(album.id) }}
+                            className="w-8 h-8 rounded-full bg-black/50 text-white flex items-center justify-center text-xs"
+                            title={album.isPrivate ? '设为公开' : '设为私密'}
+                          >
+                            {album.isPrivate ? '🔓' : '🔒'}
+                          </button>
+                          <button
+                            onClick={(e) => handleDelete(album.id, e)}
+                            className="w-8 h-8 rounded-full bg-black/50 text-white flex items-center justify-center text-sm"
+                          >
+                            🗑
+                          </button>
+                        </div>
+                      )}
                       {/* 信息 */}
                       <div className="absolute bottom-0 left-0 right-0 p-4">
                         <div className="flex items-center gap-2 mb-1">
@@ -1396,7 +1452,9 @@ function VideoAlbumDetailPage({ album, videos, allAlbums, onBack }: {
   allAlbums: VideoAlbum[]
   onBack: () => void
 }) {
-  const { data, addVideo, removeVideo, moveVideoToAlbum, updateVideoAlbum } = useSettings()
+  const { data, addVideo, removeVideo, moveVideoToAlbum, updateVideoAlbum, togglePrivateVideo } = useSettings()
+  const { mode } = useAuth()
+  const isAuthenticated = mode === 'authenticated'
   const [selected, setSelected] = useState<any>(null)
   const [showAlbumPicker, setShowAlbumPicker] = useState<string | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
@@ -1635,6 +1693,15 @@ function VideoAlbumDetailPage({ album, videos, allAlbums, onBack }: {
                   )}
                 </div>
                 <div className="flex gap-3">
+                  {isAuthenticated && (
+                    <button
+                      onClick={() => { togglePrivateVideo(selected.id); setSelected(null) }}
+                      className="px-4 py-2 rounded-xl text-sm bg-white/10"
+                      style={{ color: selected.isPrivate ? '#86efac' : '#9ca3af' }}
+                    >
+                      {selected.isPrivate ? '🔓 设为公开' : '🔒 设为私密'}
+                    </button>
+                  )}
                   <button
                     onClick={() => { updateVideoAlbum(album.id, { coverVideoId: selected.id }); setSelected(null) }}
                     className="px-4 py-2 rounded-xl text-sm text-yellow-400 bg-white/10"
@@ -1657,10 +1724,10 @@ function VideoAlbumDetailPage({ album, videos, allAlbums, onBack }: {
    时间线页
 ════════════════════════════════════════════════ */
 function TimelinePage({ isAuthenticated }: { isAuthenticated: boolean }) {
-  const { data, addTimelineItem, updateTimelineItem, removeTimelineItem } = useSettings()
+  const { data, addTimelineItem, updateTimelineItem, removeTimelineItem, togglePrivateTimelineItem } = useSettings()
   const [editingId, setEditingId] = useState<string | null>(null)
   const [showForm, setShowForm] = useState(false)
-  const [formData, setFormData] = useState({ date: '', title: '', description: '' })
+  const [formData, setFormData] = useState({ date: '', title: '', description: '', isPrivate: false })
 
   const visibleTimeline = isAuthenticated ? data.timeline : data.timeline.filter(t => !t.isPrivate)
 
@@ -1671,9 +1738,9 @@ function TimelinePage({ isAuthenticated }: { isAuthenticated: boolean }) {
       date: formData.date,
       title: formData.title,
       description: formData.description,
-      isPrivate: false,
+      isPrivate: formData.isPrivate,
     })
-    setFormData({ date: '', title: '', description: '' })
+    setFormData({ date: '', title: '', description: '', isPrivate: false })
     setShowForm(false)
   }
 
@@ -1737,6 +1804,15 @@ function TimelinePage({ isAuthenticated }: { isAuthenticated: boolean }) {
                   rows={3}
                   placeholder="描述..."
                 />
+                <label className="flex items-center gap-2 cursor-pointer text-sm" style={{ color: 'var(--text-light)' }}>
+                  <input
+                    type="checkbox"
+                    checked={formData.isPrivate}
+                    onChange={e => setFormData({ ...formData, isPrivate: e.target.checked })}
+                    className="rounded"
+                  />
+                  🔒 设为私密（访客不可见）
+                </label>
                 <div className="flex gap-3">
                   <button onClick={handleAdd} className="btn-primary px-6 py-2 rounded-xl text-sm flex-1">
                     保存
@@ -1777,11 +1853,23 @@ function TimelinePage({ isAuthenticated }: { isAuthenticated: boolean }) {
                   transition={{ type: 'spring', damping: 15 }}
                 >
                   <p className="text-xs font-semibold mb-2" style={{ color: 'var(--c1)' }}>{item.date}</p>
-                  <h3 className="font-bold text-lg mb-2" style={{ color: 'var(--text)' }}>{item.title}</h3>
+                  <h3 className="font-bold text-lg mb-2 flex items-center gap-2" style={{ color: 'var(--text)' }}>
+                    {item.title}
+                    {item.isPrivate && (
+                      <span className="inline-flex px-1.5 py-0.5 rounded-full bg-gray-700 text-white text-[10px]">🔒</span>
+                    )}
+                  </h3>
                   <p className="text-sm leading-relaxed" style={{ color: 'var(--text-light)' }}>{item.description}</p>
                   {/* 操作按钮 */}
                   {isAuthenticated && (
                     <div className="flex gap-2 mt-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button
+                        onClick={() => togglePrivateTimelineItem(item.id)}
+                        className="px-3 py-1 rounded-lg text-xs"
+                        style={{ border: '1px solid var(--border)' }}
+                      >
+                        {item.isPrivate ? '🔓 公开' : '🔒 私密'}
+                      </button>
                       <button
                         onClick={() => {
                           const newTitle = prompt('修改标题', item.title)
@@ -1824,10 +1912,10 @@ function TimelinePage({ isAuthenticated }: { isAuthenticated: boolean }) {
    情书页
 ════════════════════════════════════════════════ */
 function LettersPage({ isAuthenticated }: { isAuthenticated: boolean }) {
-  const { data, addLetter, updateLetter, removeLetter } = useSettings()
+  const { data, addLetter, updateLetter, removeLetter, togglePrivateLetter } = useSettings()
   const [selected, setSelected] = useState<any>(null)
   const [showForm, setShowForm] = useState(false)
-  const [formData, setFormData] = useState({ title: '', content: '' })
+  const [formData, setFormData] = useState({ title: '', content: '', isPrivate: false })
 
   const visibleLetters = isAuthenticated ? data.letters : data.letters.filter(l => !l.isPrivate)
 
@@ -1838,9 +1926,9 @@ function LettersPage({ isAuthenticated }: { isAuthenticated: boolean }) {
       title: formData.title,
       date: new Date().toISOString().split('T')[0].replace(/-/g, '.'),
       content: formData.content,
-      isPrivate: false,
+      isPrivate: formData.isPrivate,
     })
-    setFormData({ title: '', content: '' })
+    setFormData({ title: '', content: '', isPrivate: false })
     setShowForm(false)
   }
 
@@ -1899,6 +1987,15 @@ function LettersPage({ isAuthenticated }: { isAuthenticated: boolean }) {
                   rows={6}
                   placeholder="写下你想说的话..."
                 />
+                <label className="flex items-center gap-2 cursor-pointer text-sm" style={{ color: 'var(--text-light)' }}>
+                  <input
+                    type="checkbox"
+                    checked={formData.isPrivate}
+                    onChange={e => setFormData({ ...formData, isPrivate: e.target.checked })}
+                    className="rounded"
+                  />
+                  🔒 设为私密（访客不可见）
+                </label>
                 <div className="flex gap-3">
                   <button onClick={handleAdd} className="btn-primary px-6 py-2 rounded-xl text-sm flex-1">
                     保存
@@ -1926,7 +2023,12 @@ function LettersPage({ isAuthenticated }: { isAuthenticated: boolean }) {
             >
               <div className="flex items-start justify-between mb-4">
                 <div>
-                  <h3 className="font-bold text-lg mb-1" style={{ color: 'var(--text)' }}>{letter.title}</h3>
+                  <h3 className="font-bold text-lg mb-1 inline-flex items-center gap-2" style={{ color: 'var(--text)' }}>
+                    {letter.title}
+                    {letter.isPrivate && (
+                      <span className="inline-flex px-1.5 py-0.5 rounded-full bg-gray-700 text-white text-[10px]">🔒</span>
+                    )}
+                  </h3>
                   <p className="text-xs" style={{ color: 'var(--text-light)' }}>{letter.date}</p>
                 </div>
                 <span className="text-3xl">💌</span>
@@ -1938,6 +2040,16 @@ function LettersPage({ isAuthenticated }: { isAuthenticated: boolean }) {
               {/* 操作按钮 - 仅登录可见 */}
               {isAuthenticated && (
                 <div className="absolute top-4 right-16 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      togglePrivateLetter(letter.id)
+                    }}
+                    className="px-3 py-1 rounded-lg text-xs"
+                    style={{ border: '1px solid var(--border)', background: 'var(--card)' }}
+                  >
+                    {letter.isPrivate ? '🔓 公开' : '🔒 私密'}
+                  </button>
                   <button
                     onClick={(e) => {
                       e.stopPropagation()
