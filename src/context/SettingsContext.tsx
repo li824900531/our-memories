@@ -10,6 +10,7 @@ export interface Album {
   coverPhotoId: string | null
   sortOrder: number
   isPinned: boolean
+  isPrivate: boolean
   createdAt: string
 }
 
@@ -20,6 +21,7 @@ export interface VideoAlbum {
   coverVideoId: string | null
   sortOrder: number
   isPinned: boolean
+  isPrivate: boolean
   createdAt: string
 }
 
@@ -29,6 +31,7 @@ export interface Photo {
   date: string
   caption: string
   albumId: string | null
+  isPrivate: boolean
 }
 
 export interface Video {
@@ -38,6 +41,7 @@ export interface Video {
   title: string
   albumId: string | null
   isAudio?: boolean
+  isPrivate: boolean
 }
 
 export interface TimelineItem {
@@ -45,6 +49,7 @@ export interface TimelineItem {
   date: string
   title: string
   description: string
+  isPrivate: boolean
 }
 
 export interface Letter {
@@ -52,6 +57,7 @@ export interface Letter {
   title: string
   date: string
   content: string
+  isPrivate: boolean
 }
 
 export interface HomeContent {
@@ -182,6 +188,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
             coverPhotoId: a.cover_photo_id,
             sortOrder: a.sort_order,
             isPinned: a.is_pinned,
+            isPrivate: a.is_private ?? false,
             createdAt: a.created_at,
           })),
           videoAlbums: (videoAlbumsRes.data || []).map(a => ({
@@ -191,6 +198,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
             coverVideoId: a.cover_video_id,
             sortOrder: a.sort_order,
             isPinned: a.is_pinned,
+            isPrivate: a.is_private ?? false,
             createdAt: a.created_at,
           })),
           photos: (photosRes.data || []).map(p => ({
@@ -199,6 +207,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
             date: p.date,
             caption: p.caption,
             albumId: p.album_id,
+            isPrivate: p.is_private ?? false,
           })),
           videos: (videosRes.data || []).map(v => ({
             id: v.id,
@@ -207,18 +216,21 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
             title: v.title,
             albumId: v.album_id,
             isAudio: v.is_audio,
+            isPrivate: v.is_private ?? false,
           })),
           timeline: (timelineRes.data || []).map(t => ({
             id: t.id,
             date: t.date,
             title: t.title,
             description: t.description,
+            isPrivate: t.is_private ?? false,
           })),
           letters: (lettersRes.data || []).map(l => ({
             id: l.id,
             title: l.title,
             date: l.date,
             content: l.content,
+            isPrivate: l.is_private ?? false,
           })),
         }
 
@@ -318,7 +330,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   // 相册
   const addAlbum = (album: Album) => {
     setData(d => ({ ...d, albums: [...d.albums, { ...album, sortOrder: d.albums.length }] }))
-    supabaseUpsert('albums', { id: album.id, name: album.name, emoji: album.emoji, cover_photo_id: album.coverPhotoId, sort_order: album.sortOrder, is_pinned: album.isPinned, created_at: album.createdAt })
+    supabaseUpsert('albums', { id: album.id, name: album.name, emoji: album.emoji, cover_photo_id: album.coverPhotoId, sort_order: album.sortOrder, is_pinned: album.isPinned, is_private: album.isPrivate, created_at: album.createdAt })
   }
 
   const removeAlbum = (id: string) => {

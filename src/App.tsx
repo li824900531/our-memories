@@ -1,15 +1,18 @@
 import { useState, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { SettingsProvider, useSettings, Album, VideoAlbum } from './context/SettingsContext'
+import { AuthProvider, useAuth } from './context/AuthContext'
 import SettingsPanel from './components/SettingsPanel'
+import LoginPage from './components/LoginPage'
 
 type Page = 'home' | 'albums' | 'gallery' | 'video-albums' | 'timeline' | 'letters'
 
 /* ════════════════════════════════════════════════
    导航栏
 ════════════════════════════════════════════════ */
-function Navbar({ current, onNavigate }: { current: Page; onNavigate: (p: Page) => void }) {
+function Navbar({ current, onNavigate, isAuthenticated }: { current: Page; onNavigate: (p: Page) => void; isAuthenticated: boolean }) {
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const { logout } = useAuth()
 
   return (
     <>
@@ -41,15 +44,42 @@ function Navbar({ current, onNavigate }: { current: Page; onNavigate: (p: Page) 
                 </NavButton>
               ))}
             </div>
-            <motion.button
-              onClick={() => setSettingsOpen(true)}
-              className="w-9 h-9 rounded-xl flex items-center justify-center text-sm"
-              style={{ background: 'var(--card)', border: '1px solid var(--border)' }}
-              whileHover={{ scale: 1.1, rotate: 90 }}
-              whileTap={{ scale: 0.9 }}
-            >
-              ⚙️
-            </motion.button>
+            <div className="flex items-center gap-2">
+              {isAuthenticated && (
+                <motion.button
+                  onClick={() => setSettingsOpen(true)}
+                  className="w-9 h-9 rounded-xl flex items-center justify-center text-sm"
+                  style={{ background: 'var(--card)', border: '1px solid var(--border)' }}
+                  whileHover={{ scale: 1.1, rotate: 90 }}
+                  whileTap={{ scale: 0.9 }}
+                >
+                  ⚙️
+                </motion.button>
+              )}
+              {isAuthenticated && (
+                <motion.button
+                  onClick={logout}
+                  className="w-9 h-9 rounded-xl flex items-center justify-center text-sm"
+                  style={{ background: 'var(--card)', border: '1px solid var(--border)' }}
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
+                  title="退出登录"
+                >
+                  🚪
+                </motion.button>
+              )}
+              {!isAuthenticated && (
+                <motion.button
+                  onClick={logout}
+                  className="text-xs px-3 py-1.5 rounded-xl"
+                  style={{ border: '1px solid var(--border)', color: 'var(--text-light)' }}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  退出访客
+                </motion.button>
+              )}
+            </div>
           </div>
         </div>
       </motion.nav>
@@ -86,7 +116,7 @@ function NavButton({ active, onClick, children }: { active: boolean; onClick: ()
 /* ════════════════════════════════════════════════
    首页
 ════════════════════════════════════════════════ */
-function HomePage() {
+function HomePage({ isAuthenticated }: { isAuthenticated: boolean }) {
   const { data, updateHome } = useSettings()
   const h = data.home
   const [editing, setEditing] = useState(false)
@@ -151,7 +181,7 @@ function HomePage() {
           >
             <span
               suppressContentEditableWarning
-              contentEditable={editing}
+              contentEditable={isAuthenticated && editing}
               onBlur={e => updateHome({ heroTitle: e.currentTarget.textContent || '' })}
               className="gradient-text"
             >
@@ -161,7 +191,7 @@ function HomePage() {
 
           <motion.p
             suppressContentEditableWarning
-            contentEditable={editing}
+            contentEditable={isAuthenticated && editing}
             onBlur={e => updateHome({ heroSubtitle: e.currentTarget.textContent || '' })}
             className="text-lg md:text-xl mb-4 max-w-md mx-auto"
             style={{ color: 'var(--text-light)' }}
@@ -174,7 +204,7 @@ function HomePage() {
 
           <motion.p
             suppressContentEditableWarning
-            contentEditable={editing}
+            contentEditable={isAuthenticated && editing}
             onBlur={e => updateHome({ heroTagline: e.currentTarget.textContent || '' })}
             className="text-sm max-w-sm mx-auto"
             style={{ color: 'var(--text-light)', opacity: 0.7 }}
@@ -185,19 +215,21 @@ function HomePage() {
             "{h.heroTagline}"
           </motion.p>
 
-          {/* 编辑提示 */}
-          <motion.button
-            onClick={() => setEditing(!editing)}
-            className="mt-6 px-5 py-2 rounded-full text-xs font-medium"
-            style={{
-              background: editing ? 'var(--c1)' : 'var(--card)',
-              color: editing ? 'white' : 'var(--text-light)',
-              border: editing ? 'none' : '1px solid var(--border)',
-            }}
-            whileTap={{ scale: 0.95 }}
-          >
-            {editing ? '✓ 编辑模式已开启（点击文字即可修改）' : '✏️ 开启编辑模式'}
-          </motion.button>
+          {/* 编辑提示 - 仅登录后可见 */}
+          {isAuthenticated && (
+            <motion.button
+              onClick={() => setEditing(!editing)}
+              className="mt-6 px-5 py-2 rounded-full text-xs font-medium"
+              style={{
+                background: editing ? 'var(--c1)' : 'var(--card)',
+                color: editing ? 'white' : 'var(--text-light)',
+                border: editing ? 'none' : '1px solid var(--border)',
+              }}
+              whileTap={{ scale: 0.95 }}
+            >
+              {editing ? '✓ 编辑模式已开启（点击文字即可修改）' : '✏️ 开启编辑模式'}
+            </motion.button>
+          )}
         </div>
 
         {/* 装饰线 */}
@@ -227,7 +259,7 @@ function HomePage() {
         >
           {[
             { emoji: '📅', label: h.statsLabel1, number: '∞' },
-            { emoji: '📷', label: h.statsLabel2, number: data.photos.filter((p: any) => p.url).length + '+' },
+            { emoji: '📷', label: h.statsLabel2, number: (isAuthenticated ? data.photos.length : data.photos.filter(p => !p.isPrivate).length) + '+' },
             { emoji: '❤️', label: h.statsLabel3, number: '∞' },
           ].map((stat, i) => (
             <motion.div
@@ -264,21 +296,25 @@ function HomePage() {
 /* ════════════════════════════════════════════════
    相册册页面（展示所有相册卡片，类似QQ空间）
 ════════════════════════════════════════════════ */
-function AlbumsPage() {
+function AlbumsPage({ isAuthenticated }: { isAuthenticated: boolean }) {
   const { data, addAlbum, removeAlbum, updateAlbum } = useSettings()
   const [currentPage, setCurrentPage] = useState<'list' | 'detail'>('list')
   const [activeAlbumId, setActiveAlbumId] = useState<string | null>(null)
   const [showForm, setShowForm] = useState(false)
   const [formData, setFormData] = useState({ name: '', emoji: '📷' })
 
+  // 过滤数据：访客模式隐藏私密内容
+  const visibleAlbums = isAuthenticated ? data.albums : data.albums.filter(a => !a.isPrivate)
+  const visiblePhotos = isAuthenticated ? data.photos : data.photos.filter(p => !p.isPrivate)
+
   // 获取排序后的相册（置顶在前）
-  const sortedAlbums = [...data.albums].sort((a, b) => {
+  const sortedAlbums = [...visibleAlbums].sort((a, b) => {
     if (a.isPinned !== b.isPinned) return b.isPinned ? 1 : -1
     return a.sortOrder - b.sortOrder
   })
 
-  const activeAlbum = data.albums.find(a => a.id === activeAlbumId)
-  const albumPhotos = activeAlbumId ? data.photos.filter(p => p.albumId === activeAlbumId) : data.photos
+  const activeAlbum = visibleAlbums.find(a => a.id === activeAlbumId)
+  const albumPhotos = activeAlbumId ? visiblePhotos.filter(p => p.albumId === activeAlbumId) : visiblePhotos
 
   // 点击相册卡片进入详情
   const handleAlbumClick = (albumId: string) => {
@@ -332,16 +368,18 @@ function AlbumsPage() {
                 <p className="text-xs tracking-[0.3em] mb-3 font-medium" style={{ color: 'var(--c1)' }}>ALBUMS</p>
                 <h2 className="text-4xl md:text-5xl font-bold tracking-tight" style={{ color: 'var(--text)' }}>相册</h2>
                 <p className="mt-2 text-sm" style={{ color: 'var(--text-light)' }}>
-                  {data.albums.length} 个相册 · {data.photos.length} 张照片
+                  {visibleAlbums.length} 个相册 · {visiblePhotos.length} 张照片
                 </p>
               </div>
-              <motion.button
-                onClick={() => setShowForm(!showForm)}
-                className="btn-primary px-6 py-3 rounded-2xl text-sm flex items-center gap-2"
-                whileTap={{ scale: 0.95 }}
-              >
-                <span>+</span> 新建相册
-              </motion.button>
+              {isAuthenticated && (
+                <motion.button
+                  onClick={() => setShowForm(!showForm)}
+                  className="btn-primary px-6 py-3 rounded-2xl text-sm flex items-center gap-2"
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <span>+</span> 新建相册
+                </motion.button>
+              )}
             </div>
 
             {/* 创建表单 */}
@@ -427,13 +465,21 @@ function AlbumsPage() {
                           📌
                         </div>
                       )}
-                      {/* 删除按钮 */}
-                      <button
-                        onClick={(e) => handleDelete(album.id, e)}
-                        className="absolute top-2 right-2 w-8 h-8 rounded-full bg-black/50 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-sm"
-                      >
-                        🗑
-                      </button>
+                      {/* 私密标签 */}
+                      {album.isPrivate && (
+                        <div className="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-gray-700 text-white text-xs font-medium">
+                          🔒
+                        </div>
+                      )}
+                      {/* 删除按钮 - 仅登录可见 */}
+                      {isAuthenticated && (
+                        <button
+                          onClick={(e) => handleDelete(album.id, e)}
+                          className="absolute top-2 right-2 w-8 h-8 rounded-full bg-black/50 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-sm"
+                        >
+                          🗑
+                        </button>
+                      )}
                       {/* 信息 */}
                       <div className="absolute bottom-0 left-0 right-0 p-4">
                         <div className="flex items-center gap-2 mb-1">
@@ -460,8 +506,9 @@ function AlbumsPage() {
     <AlbumDetailPage
       album={activeAlbum!}
       photos={albumPhotos}
-      allAlbums={data.albums}
+      allAlbums={visibleAlbums}
       onBack={handleBack}
+      isAuthenticated={isAuthenticated}
     />
   )
 }
@@ -469,11 +516,12 @@ function AlbumsPage() {
 /* ════════════════════════════════════════════════
    相册详情页（查看单个相册内的照片）
 ════════════════════════════════════════════════ */
-function AlbumDetailPage({ album, photos, allAlbums, onBack }: {
+function AlbumDetailPage({ album, photos, allAlbums, onBack, isAuthenticated }: {
   album: Album
   photos: any[]
   allAlbums: Album[]
   onBack: () => void
+  isAuthenticated: boolean
 }) {
   const { data, addPhoto, removePhoto, updatePhoto, movePhotoToAlbum, updateAlbum } = useSettings()
   const [selected, setSelected] = useState<any>(null)
@@ -546,32 +594,36 @@ function AlbumDetailPage({ album, photos, allAlbums, onBack }: {
                 {photos.length} 张照片
               </p>
             </div>
-            <motion.button
-              onClick={() => fileRef.current?.click()}
-              className="btn-primary px-6 py-3 rounded-2xl text-sm flex items-center gap-2 ml-auto"
-              whileTap={{ scale: 0.95 }}
-            >
-              <span>+</span> 添加照片
-            </motion.button>
+            {isAuthenticated && (
+              <motion.button
+                onClick={() => fileRef.current?.click()}
+                className="btn-primary px-6 py-3 rounded-2xl text-sm flex items-center gap-2 ml-auto"
+                whileTap={{ scale: 0.95 }}
+              >
+                <span>+</span> 添加照片
+              </motion.button>
+            )}
             <input ref={fileRef} type="file" accept="image/*" multiple className="hidden"
               onChange={e => handleFiles(e.target.files)} />
           </div>
         </motion.div>
 
-        {/* 拖拽上传 */}
-        <motion.div
-          className={`drop-zone mb-8 ${dragging ? 'drag-over' : ''}`}
-          style={{ borderRadius: 'var(--radius)' }}
-          onDragOver={e => { e.preventDefault(); setDragging(true) }}
-          onDragLeave={() => setDragging(false)}
-          onDrop={e => { e.preventDefault(); setDragging(false); handleFiles(e.dataTransfer.files) }}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-        >
-          <p className="text-sm" style={{ color: 'var(--text-light)' }}>
-            📂 拖拽照片到此处上传 · 将归入「{album.name}」
-          </p>
-        </motion.div>
+        {/* 拖拽上传 - 仅登录可见 */}
+        {isAuthenticated && (
+          <motion.div
+            className={`drop-zone mb-8 ${dragging ? 'drag-over' : ''}`}
+            style={{ borderRadius: 'var(--radius)' }}
+            onDragOver={e => { e.preventDefault(); setDragging(true) }}
+            onDragLeave={() => setDragging(false)}
+            onDrop={e => { e.preventDefault(); setDragging(false); handleFiles(e.dataTransfer.files) }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+          >
+            <p className="text-sm" style={{ color: 'var(--text-light)' }}>
+              📂 拖拽照片到此处上传 · 将归入「{album.name}」
+            </p>
+          </motion.div>
+        )}
 
         {/* 照片网格 */}
         <motion.div className="photo-grid" layout>
@@ -765,7 +817,7 @@ function AlbumDetailPage({ album, photos, allAlbums, onBack }: {
 /* ════════════════════════════════════════════════
    照片管理页（查看全部照片）
 ════════════════════════════════════════════════ */
-function GalleryPage() {
+function GalleryPage({ isAuthenticated }: { isAuthenticated: boolean }) {
   const { data, addPhoto, removePhoto, updatePhoto, movePhotoToAlbum, updateAlbum } = useSettings()
   const [selected, setSelected] = useState<any>(null)
   const [showAlbumPicker, setShowAlbumPicker] = useState<string | null>(null)
@@ -774,6 +826,10 @@ function GalleryPage() {
   const [dragging, setDragging] = useState(false)
   const [batchMode, setBatchMode] = useState(false)
   const [batchSelected, setBatchSelected] = useState<Set<string>>(new Set())
+
+  // 过滤数据
+  const visiblePhotos = isAuthenticated ? data.photos : data.photos.filter(p => !p.isPrivate)
+  const visibleAlbums = isAuthenticated ? data.albums : data.albums.filter(a => !a.isPrivate)
 
   const handleFiles = useCallback((files: FileList | null) => {
     if (!files) return
@@ -1949,11 +2005,33 @@ function Footer() {
    主应用
 ════════════════════════════════════════════════ */
 function AppContent() {
+  const { mode, isLoading: authLoading } = useAuth()
   const [currentPage, setCurrentPage] = useState<Page>('home')
+  const { isLoading: dataLoading } = useSettings()
+
+  if (authLoading || dataLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--bg)' }}>
+        <motion.div
+          className="text-6xl"
+          animate={{ scale: [1, 1.2, 1], opacity: [0.6, 1, 0.6] }}
+          transition={{ duration: 1.5, repeat: Infinity }}
+        >
+          💕
+        </motion.div>
+      </div>
+    )
+  }
+
+  if (mode === 'none') {
+    return <LoginPage />
+  }
+
+  const isAuthenticated = mode === 'authenticated'
 
   return (
     <div className="min-h-screen" style={{ background: 'var(--bg)', color: 'var(--text)' }}>
-      <Navbar current={currentPage} onNavigate={setCurrentPage} />
+      <Navbar current={currentPage} onNavigate={setCurrentPage} isAuthenticated={isAuthenticated} />
 
       <AnimatePresence mode="wait">
         <motion.main
@@ -1963,12 +2041,12 @@ function AppContent() {
           exit={{ opacity: 0, y: -20, scale: 0.98 }}
           transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
         >
-          {currentPage === 'home' && <HomePage />}
-          {currentPage === 'albums' && <AlbumsPage />}
-          {currentPage === 'gallery' && <GalleryPage />}
-          {currentPage === 'video-albums' && <VideoAlbumsPage />}
-          {currentPage === 'timeline' && <TimelinePage />}
-          {currentPage === 'letters' && <LettersPage />}
+          {currentPage === 'home' && <HomePage isAuthenticated={isAuthenticated} />}
+          {currentPage === 'albums' && <AlbumsPage isAuthenticated={isAuthenticated} />}
+          {currentPage === 'gallery' && <GalleryPage isAuthenticated={isAuthenticated} />}
+          {currentPage === 'video-albums' && <VideoAlbumsPage isAuthenticated={isAuthenticated} />}
+          {currentPage === 'timeline' && <TimelinePage isAuthenticated={isAuthenticated} />}
+          {currentPage === 'letters' && <LettersPage isAuthenticated={isAuthenticated} />}
         </motion.main>
       </AnimatePresence>
 
@@ -1980,7 +2058,9 @@ function AppContent() {
 export default function App() {
   return (
     <SettingsProvider>
-      <AppContent />
+      <AuthProvider>
+        <AppContent />
+      </AuthProvider>
     </SettingsProvider>
   )
 }
