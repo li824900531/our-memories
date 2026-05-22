@@ -868,18 +868,20 @@ function GalleryPage({ isAuthenticated }: { isAuthenticated: boolean }) {
             <div>
               <h2 className="text-4xl md:text-5xl font-bold tracking-tight" style={{ color: 'var(--text)' }}>全部照片</h2>
               <p className="mt-2 text-sm" style={{ color: 'var(--text-light)' }}>
-                {data.photos.length} 张照片
+                {visiblePhotos.length} 张照片
               </p>
             </div>
             <div className="flex items-center gap-3">
-              <motion.button
-                onClick={() => fileRef.current?.click()}
-                className="btn-primary px-6 py-3 rounded-2xl text-sm flex items-center gap-2"
-                whileTap={{ scale: 0.95 }}
-              >
-                <span>+</span> 添加照片
-              </motion.button>
-              {data.photos.length > 0 && (
+              {isAuthenticated && (
+                <motion.button
+                  onClick={() => fileRef.current?.click()}
+                  className="btn-primary px-6 py-3 rounded-2xl text-sm flex items-center gap-2"
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <span>+</span> 添加照片
+                </motion.button>
+              )}
+              {isAuthenticated && data.photos.length > 0 && (
                 <motion.button
                   onClick={() => {
                     setBatchMode(!batchMode)
@@ -916,7 +918,7 @@ function GalleryPage({ isAuthenticated }: { isAuthenticated: boolean }) {
         {/* 照片网格 */}
         <motion.div className="photo-grid" layout>
           <AnimatePresence>
-            {data.photos.map((photo, i) => (
+            {visiblePhotos.map((photo, i) => (
               <motion.div
                 key={photo.id}
                 layout
@@ -976,7 +978,7 @@ function GalleryPage({ isAuthenticated }: { isAuthenticated: boolean }) {
           </AnimatePresence>
         </motion.div>
 
-        {data.photos.length === 0 && (
+        {visiblePhotos.length === 0 && (
           <div className="text-center py-20" style={{ color: 'var(--text-light)', opacity: 0.5 }}>
             <div className="text-5xl mb-4">📷</div>
             <p>还没有照片</p>
@@ -1164,20 +1166,23 @@ function GalleryPage({ isAuthenticated }: { isAuthenticated: boolean }) {
 /* ════════════════════════════════════════════════
    视频册页面（展示所有视频相册卡片）
 ════════════════════════════════════════════════ */
-function VideoAlbumsPage() {
+function VideoAlbumsPage({ isAuthenticated }: { isAuthenticated: boolean }) {
   const { data, addVideoAlbum, removeVideoAlbum } = useSettings()
   const [currentPage, setCurrentPage] = useState<'list' | 'detail'>('list')
   const [activeAlbumId, setActiveAlbumId] = useState<string | null>(null)
   const [showForm, setShowForm] = useState(false)
   const [formData, setFormData] = useState({ name: '', emoji: '🎬' })
 
-  const sortedAlbums = [...data.videoAlbums].sort((a, b) => {
+  const visibleVideoAlbums = isAuthenticated ? data.videoAlbums : data.videoAlbums.filter(a => !a.isPrivate)
+  const visibleVideos = isAuthenticated ? data.videos : data.videos.filter(v => !v.isPrivate)
+
+  const sortedAlbums = [...visibleVideoAlbums].sort((a, b) => {
     if (a.isPinned !== b.isPinned) return b.isPinned ? 1 : -1
     return a.sortOrder - b.sortOrder
   })
 
-  const activeAlbum = data.videoAlbums.find(a => a.id === activeAlbumId)
-  const albumVideos = activeAlbumId ? data.videos.filter(v => v.albumId === activeAlbumId) : data.videos
+  const activeAlbum = visibleVideoAlbums.find(a => a.id === activeAlbumId)
+  const albumVideos = activeAlbumId ? visibleVideos.filter(v => v.albumId === activeAlbumId) : visibleVideos
 
   const handleAlbumClick = (albumId: string) => {
     setActiveAlbumId(albumId)
@@ -1232,13 +1237,15 @@ function VideoAlbumsPage() {
                   {data.videoAlbums.length} 个视频册 · {data.videos.length} 个视频
                 </p>
               </div>
-              <motion.button
-                onClick={() => setShowForm(!showForm)}
-                className="btn-primary px-6 py-3 rounded-2xl text-sm flex items-center gap-2"
-                whileTap={{ scale: 0.95 }}
-              >
-                <span>+</span> 新建视频册
-              </motion.button>
+              {isAuthenticated && (
+                <motion.button
+                  onClick={() => setShowForm(!showForm)}
+                  className="btn-primary px-6 py-3 rounded-2xl text-sm flex items-center gap-2"
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <span>+</span> 新建视频册
+                </motion.button>
+              )}
             </div>
 
             {/* 创建表单 */}
@@ -1644,11 +1651,13 @@ function VideoAlbumDetailPage({ album, videos, allAlbums, onBack }: {
 /* ════════════════════════════════════════════════
    时间线页
 ════════════════════════════════════════════════ */
-function TimelinePage() {
+function TimelinePage({ isAuthenticated }: { isAuthenticated: boolean }) {
   const { data, addTimelineItem, updateTimelineItem, removeTimelineItem } = useSettings()
   const [editingId, setEditingId] = useState<string | null>(null)
   const [showForm, setShowForm] = useState(false)
   const [formData, setFormData] = useState({ date: '', title: '', description: '' })
+
+  const visibleTimeline = isAuthenticated ? data.timeline : data.timeline.filter(t => !t.isPrivate)
 
   const handleAdd = () => {
     if (!formData.date || !formData.title) return
@@ -1682,13 +1691,15 @@ function TimelinePage() {
               <h2 className="text-4xl md:text-5xl font-bold tracking-tight" style={{ color: 'var(--text)' }}>时间线</h2>
               <p className="mt-3 text-sm" style={{ color: 'var(--text-light)' }}>我们一起走过的每一步</p>
             </div>
-            <motion.button
-              onClick={() => setShowForm(!showForm)}
-              className="btn-primary px-6 py-3 rounded-2xl text-sm flex items-center gap-2"
-              whileTap={{ scale: 0.95 }}
-            >
-              <span>+</span> 添加记录
-            </motion.button>
+            {isAuthenticated && (
+              <motion.button
+                onClick={() => setShowForm(!showForm)}
+                className="btn-primary px-6 py-3 rounded-2xl text-sm flex items-center gap-2"
+                whileTap={{ scale: 0.95 }}
+              >
+                <span>+</span> 添加记录
+              </motion.button>
+            )}
           </div>
 
           {/* 添加表单 */}
@@ -1744,7 +1755,7 @@ function TimelinePage() {
           />
 
           <div className="space-y-8">
-            {data.timeline.map((item, i) => (
+            {visibleTimeline.map((item, i) => (
               <motion.div
                 key={item.id}
                 className="relative group"
@@ -1763,33 +1774,35 @@ function TimelinePage() {
                   <h3 className="font-bold text-lg mb-2" style={{ color: 'var(--text)' }}>{item.title}</h3>
                   <p className="text-sm leading-relaxed" style={{ color: 'var(--text-light)' }}>{item.description}</p>
                   {/* 操作按钮 */}
-                  <div className="flex gap-2 mt-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button
-                      onClick={() => {
-                        const newTitle = prompt('修改标题', item.title)
-                        const newDesc = prompt('修改描述', item.description)
-                        if (newTitle !== null) updateTimelineItem(item.id, { title: newTitle })
-                        if (newDesc !== null) updateTimelineItem(item.id, { description: newDesc })
-                      }}
-                      className="px-3 py-1 rounded-lg text-xs"
-                      style={{ border: '1px solid var(--border)' }}
-                    >
-                      ✏️ 编辑
-                    </button>
-                    <button
-                      onClick={() => handleDelete(item.id)}
-                      className="px-3 py-1 rounded-lg text-xs text-red-500"
-                      style={{ border: '1px solid #ef4444' }}
-                    >
-                      🗑 删除
-                    </button>
-                  </div>
+                  {isAuthenticated && (
+                    <div className="flex gap-2 mt-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button
+                        onClick={() => {
+                          const newTitle = prompt('修改标题', item.title)
+                          const newDesc = prompt('修改描述', item.description)
+                          if (newTitle !== null) updateTimelineItem(item.id, { title: newTitle })
+                          if (newDesc !== null) updateTimelineItem(item.id, { description: newDesc })
+                        }}
+                        className="px-3 py-1 rounded-lg text-xs"
+                        style={{ border: '1px solid var(--border)' }}
+                      >
+                        ✏️ 编辑
+                      </button>
+                      <button
+                        onClick={() => handleDelete(item.id)}
+                        className="px-3 py-1 rounded-lg text-xs text-red-500"
+                        style={{ border: '1px solid #ef4444' }}
+                      >
+                        🗑 删除
+                      </button>
+                    </div>
+                  )}
                 </motion.div>
               </motion.div>
             ))}
           </div>
 
-          {data.timeline.length === 0 && (
+          {visibleTimeline.length === 0 && (
             <div className="text-center py-20" style={{ color: 'var(--text-light)', opacity: 0.5 }}>
               <div className="text-5xl mb-4">📅</div>
               <p>还没有记录</p>
@@ -1804,11 +1817,13 @@ function TimelinePage() {
 /* ════════════════════════════════════════════════
    情书页
 ════════════════════════════════════════════════ */
-function LettersPage() {
+function LettersPage({ isAuthenticated }: { isAuthenticated: boolean }) {
   const { data, addLetter, updateLetter, removeLetter } = useSettings()
   const [selected, setSelected] = useState<any>(null)
   const [showForm, setShowForm] = useState(false)
   const [formData, setFormData] = useState({ title: '', content: '' })
+
+  const visibleLetters = isAuthenticated ? data.letters : data.letters.filter(l => !l.isPrivate)
 
   const handleAdd = () => {
     if (!formData.title || !formData.content) return
@@ -1844,13 +1859,15 @@ function LettersPage() {
               <h2 className="text-4xl md:text-5xl font-bold tracking-tight" style={{ color: 'var(--text)' }}>情书</h2>
               <p className="mt-3 text-sm" style={{ color: 'var(--text-light)' }}>想对你说的每一句话</p>
             </div>
-            <motion.button
-              onClick={() => setShowForm(!showForm)}
-              className="btn-primary px-6 py-3 rounded-2xl text-sm flex items-center gap-2"
-              whileTap={{ scale: 0.95 }}
-            >
-              <span>+</span> 写情书
-            </motion.button>
+            {isAuthenticated && (
+              <motion.button
+                onClick={() => setShowForm(!showForm)}
+                className="btn-primary px-6 py-3 rounded-2xl text-sm flex items-center gap-2"
+                whileTap={{ scale: 0.95 }}
+              >
+                <span>+</span> 写情书
+              </motion.button>
+            )}
           </div>
 
           {/* 添加表单 */}
@@ -1889,7 +1906,7 @@ function LettersPage() {
         </motion.div>
 
         <div className="space-y-5">
-          {data.letters.map((letter, i) => (
+          {visibleLetters.map((letter, i) => (
             <motion.div
               key={letter.id}
               initial={{ opacity: 0, y: 30 }}
@@ -1911,33 +1928,35 @@ function LettersPage() {
                 {letter.content}
               </p>
               <p className="text-xs mt-4 gradient-text font-medium">点击阅读 →</p>
-              {/* 操作按钮 */}
-              <div className="absolute top-4 right-16 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    const newTitle = prompt('修改标题', letter.title)
-                    const newContent = prompt('修改内容', letter.content)
-                    if (newTitle !== null) updateLetter(letter.id, { title: newTitle })
-                    if (newContent !== null) updateLetter(letter.id, { content: newContent })
-                  }}
-                  className="px-3 py-1 rounded-lg text-xs"
-                  style={{ border: '1px solid var(--border)', background: 'var(--card)' }}
-                >
-                  ✏️ 编辑
-                </button>
-                <button
-                  onClick={(e) => handleDelete(letter.id, e)}
-                  className="px-3 py-1 rounded-lg text-xs text-red-500"
-                  style={{ border: '1px solid #ef4444', background: 'var(--card)' }}
-                >
-                  🗑 删除
-                </button>
-              </div>
+              {/* 操作按钮 - 仅登录可见 */}
+              {isAuthenticated && (
+                <div className="absolute top-4 right-16 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      const newTitle = prompt('修改标题', letter.title)
+                      const newContent = prompt('修改内容', letter.content)
+                      if (newTitle !== null) updateLetter(letter.id, { title: newTitle })
+                      if (newContent !== null) updateLetter(letter.id, { content: newContent })
+                    }}
+                    className="px-3 py-1 rounded-lg text-xs"
+                    style={{ border: '1px solid var(--border)', background: 'var(--card)' }}
+                  >
+                    ✏️ 编辑
+                  </button>
+                  <button
+                    onClick={(e) => handleDelete(letter.id, e)}
+                    className="px-3 py-1 rounded-lg text-xs text-red-500"
+                    style={{ border: '1px solid #ef4444', background: 'var(--card)' }}
+                  >
+                    🗑 删除
+                  </button>
+                </div>
+              )}
             </motion.div>
           ))}
 
-          {data.letters.length === 0 && (
+          {visibleLetters.length === 0 && (
             <div className="text-center py-20" style={{ color: 'var(--text-light)', opacity: 0.5 }}>
               <div className="text-5xl mb-4">💌</div>
               <p>还没有情书</p>
