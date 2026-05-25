@@ -900,6 +900,22 @@ function TimelineTab({ data, addItem, updateItem, removeItem }: {
   removeItem: (id: string) => void
 }) {
   const [newItem, setNewItem] = useState({ date: '', title: '', description: '', isPrivate: false })
+  const [mediaUrl, setMediaUrl] = useState<string | null>(null)
+  const [mediaType, setMediaType] = useState<'image' | 'video' | null>(null)
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const isVideo = file.type.startsWith('video/')
+    const isImage = file.type.startsWith('image/')
+    if (!isImage && !isVideo) { alert('请选择图片或视频文件'); return }
+    const reader = new FileReader()
+    reader.onload = (ev) => {
+      setMediaUrl(ev.target?.result as string)
+      setMediaType(isVideo ? 'video' : 'image')
+    }
+    reader.readAsDataURL(file)
+  }
 
   const handleAdd = () => {
     if (!newItem.title.trim()) return
@@ -908,8 +924,12 @@ function TimelineTab({ data, addItem, updateItem, removeItem }: {
       ...newItem,
       date: newItem.date || new Date().toISOString().split('T')[0].replace(/-/g, '.'),
       isPrivate: newItem.isPrivate,
+      mediaUrl: mediaUrl || undefined,
+      mediaType: mediaType || undefined,
     })
     setNewItem({ date: '', title: '', description: '', isPrivate: false })
+    setMediaUrl(null)
+    setMediaType(null)
   }
 
   return (
@@ -921,6 +941,39 @@ function TimelineTab({ data, addItem, updateItem, removeItem }: {
           <input className="input-field" placeholder="日期 如：2024.06.01" value={newItem.date} onChange={e => setNewItem(s => ({ ...s, date: e.target.value }))} />
           <input className="input-field" placeholder="事件标题" value={newItem.title} onChange={e => setNewItem(s => ({ ...s, title: e.target.value }))} />
           <input className="input-field" placeholder="事件描述" value={newItem.description} onChange={e => setNewItem(s => ({ ...s, description: e.target.value }))} />
+
+          {/* 媒体上传 */}
+          <div>
+            <input
+              type="file"
+              accept="image/*,video/*"
+              onChange={handleFileSelect}
+              className="hidden"
+              id="timeline-media-upload"
+            />
+            {mediaUrl ? (
+              <div className="relative rounded-xl overflow-hidden">
+                {mediaType === 'video' ? (
+                  <video src={mediaUrl} controls className="w-full max-h-32 rounded-xl" />
+                ) : (
+                  <img src={mediaUrl} alt="预览" className="w-full max-h-32 object-cover rounded-xl" />
+                )}
+                <button
+                  onClick={() => { setMediaUrl(null); setMediaType(null) }}
+                  className="absolute top-1 right-1 w-6 h-6 rounded-full bg-black/60 text-white text-xs flex items-center justify-center"
+                >✕</button>
+              </div>
+            ) : (
+              <label
+                htmlFor="timeline-media-upload"
+                className="block w-full py-3 rounded-xl border-2 border-dashed text-xs text-center cursor-pointer hover:opacity-70 transition-opacity"
+                style={{ borderColor: 'var(--border)', color: 'var(--text-light)' }}
+              >
+                📎 上传配图或视频（可选）
+              </label>
+            )}
+          </div>
+
           <label className="flex items-center gap-2 cursor-pointer text-sm" style={{ color: 'var(--text-light)' }}>
             <input
               type="checkbox"
@@ -956,6 +1009,15 @@ function TimelineTab({ data, addItem, updateItem, removeItem }: {
               value={item.description}
               onChange={e => updateItem(item.id, { description: e.target.value })}
             />
+            {item.mediaUrl && (
+              <div className="mt-2 rounded-lg overflow-hidden bg-black/5">
+                {item.mediaType === 'video' ? (
+                  <video src={item.mediaUrl} controls className="w-full max-h-32 rounded-lg" />
+                ) : (
+                  <img src={item.mediaUrl} alt="" className="w-full max-h-32 object-cover rounded-lg" />
+                )}
+              </div>
+            )}
             <button onClick={() => removeItem(item.id)} className="mt-2 text-xs text-red-400 hover:text-red-500">🗑 删除</button>
           </div>
         ))}

@@ -37,8 +37,8 @@ function Navbar({ current, onNavigate, isAuthenticated }: { current: Page; onNav
                 ['albums', '相册'],
                 ['video-albums', '视频册'],
                 ['timeline', '时间线'],
-                ['letters', '情书'],
-              ] as [Page, string][]).map(([key, label]) => (
+                ...(isAuthenticated ? [['letters', '情书']] : []),
+              ).map(([key, label]) => (
                 <NavButton key={key} active={current === key} onClick={() => onNavigate(key)}>
                   {label}
                 </NavButton>
@@ -1725,29 +1725,87 @@ function VideoAlbumDetailPage({ album, videos, allAlbums, onBack }: {
 ════════════════════════════════════════════════ */
 function TimelinePage({ isAuthenticated }: { isAuthenticated: boolean }) {
   const { data, addTimelineItem, updateTimelineItem, removeTimelineItem, togglePrivateTimelineItem } = useSettings()
-  const [editingId, setEditingId] = useState<string | null>(null)
   const [showForm, setShowForm] = useState(false)
   const [formData, setFormData] = useState({ date: '', title: '', description: '', isPrivate: false })
+  const [formMediaUrl, setFormMediaUrl] = useState<string | null>(null)
+  const [formMediaType, setFormMediaType] = useState<'image' | 'video' | null>(null)
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const visibleTimeline = isAuthenticated ? data.timeline : data.timeline.filter(t => !t.isPrivate)
 
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const isVideo = file.type.startsWith('video/')
+    const isImage = file.type.startsWith('image/')
+    if (!isImage && !isVideo) { alert('请选择图片或视频文件'); return }
+    const reader = new FileReader()
+    reader.onload = (ev) => {
+      setFormMediaUrl(ev.target?.result as string)
+      setFormMediaType(isVideo ? 'video' : 'image')
+    }
+    reader.readAsDataURL(file)
+  }
+
+  const clearMedia = () => {
+    setFormMediaUrl(null)
+    setFormMediaType(null)
+    if (fileInputRef.current) fileInputRef.current.value = ''
+  }
+
   const handleAdd = () => {
     if (!formData.date || !formData.title) return
-    addTimelineItem({
-      id: Date.now().toString(),
-      date: formData.date,
-      title: formData.title,
-      description: formData.description,
-      isPrivate: formData.isPrivate,
-    })
+    if (editingId) {
+      updateTimelineItem(editingId, {
+        date: formData.date,
+        title: formData.title,
+        description: formData.description,
+        isPrivate: formData.isPrivate,
+        mediaUrl: formMediaUrl || undefined,
+        mediaType: formMediaType || undefined,
+      })
+    } else {
+      addTimelineItem({
+        id: Date.now().toString(),
+        date: formData.date,
+        title: formData.title,
+        description: formData.description,
+        isPrivate: formData.isPrivate,
+        mediaUrl: formMediaUrl || undefined,
+        mediaType: formMediaType || undefined,
+      })
+    }
     setFormData({ date: '', title: '', description: '', isPrivate: false })
+    clearMedia()
     setShowForm(false)
+    setEditingId(null)
   }
 
   const handleDelete = (id: string) => {
     if (confirm('确定删除这条记录吗？')) {
       removeTimelineItem(id)
     }
+  }
+
+  const renderMedia = (item: any) => {
+    if (!item.mediaUrl) return null
+    if (item.mediaType === 'video') {
+      return (
+        <video
+          src={item.mediaUrl}
+          controls
+          className="w-full rounded-2xl mt-3 max-h-80 object-contain bg-black/5"
+        />
+      )
+    }
+    return (
+      <img
+        src={item.mediaUrl}
+        alt={item.title}
+        className="w-full rounded-2xl mt-3 max-h-80 object-cover"
+      />
+    )
   }
 
   return (
@@ -1766,7 +1824,7 @@ function TimelinePage({ isAuthenticated }: { isAuthenticated: boolean }) {
             </div>
             {isAuthenticated && (
               <motion.button
-                onClick={() => setShowForm(!showForm)}
+                onClick={() => { setShowForm(!showForm); setEditingId(null); clearMedia(); setFormData({ date: '', title: '', description: '', isPrivate: false }) }}
                 className="btn-primary px-6 py-3 rounded-2xl text-sm flex items-center gap-2"
                 whileTap={{ scale: 0.95 }}
               >
@@ -1775,7 +1833,7 @@ function TimelinePage({ isAuthenticated }: { isAuthenticated: boolean }) {
             )}
           </div>
 
-          {/* 添加表单 */}
+          {/* 添加/编辑表单 */}
           {showForm && (
             <motion.div
               className="glass rounded-3xl p-6 mb-8"
@@ -1804,6 +1862,40 @@ function TimelinePage({ isAuthenticated }: { isAuthenticated: boolean }) {
                   rows={3}
                   placeholder="描述..."
                 />
+
+                {/* 媒体上传 */}
+                <div>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*,video/*"
+                    onChange={handleFileSelect}
+                    className="hidden"
+                  />
+                  {formMediaUrl ? (
+                    <div className="relative rounded-2xl overflow-hidden bg-black/5">
+                      {formMediaType === 'video' ? (
+                        <video src={formMediaUrl} controls className="w-full max-h-48 rounded-2xl" />
+                      ) : (
+                        <img src={formMediaUrl} alt="预览" className="w-full max-h-48 object-cover rounded-2xl" />
+                      )}
+                      <button
+                        onClick={clearMedia}
+                        className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/60 text-white text-xs flex items-center justify-center hover:bg-black/80"
+                      >✕</button>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="w-full py-4 rounded-2xl border-2 border-dashed text-sm hover:opacity-70 transition-opacity"
+                      style={{ borderColor: 'var(--border)', color: 'var(--text-light)' }}
+                    >
+                      📎 点击上传图片或视频（可选）
+                    </button>
+                  )}
+                </div>
+
                 <label className="flex items-center gap-2 cursor-pointer text-sm" style={{ color: 'var(--text-light)' }}>
                   <input
                     type="checkbox"
@@ -1815,9 +1907,9 @@ function TimelinePage({ isAuthenticated }: { isAuthenticated: boolean }) {
                 </label>
                 <div className="flex gap-3">
                   <button onClick={handleAdd} className="btn-primary px-6 py-2 rounded-xl text-sm flex-1">
-                    保存
+                    {editingId ? '保存修改' : '保存'}
                   </button>
-                  <button onClick={() => setShowForm(false)} className="px-6 py-2 rounded-xl text-sm" style={{ border: '1px solid var(--border)' }}>
+                  <button onClick={() => { setShowForm(false); clearMedia(); setEditingId(null); setFormData({ date: '', title: '', description: '', isPrivate: false }) }} className="px-6 py-2 rounded-xl text-sm" style={{ border: '1px solid var(--border)' }}>
                     取消
                   </button>
                 </div>
@@ -1858,8 +1950,14 @@ function TimelinePage({ isAuthenticated }: { isAuthenticated: boolean }) {
                     {item.isPrivate && (
                       <span className="inline-flex px-1.5 py-0.5 rounded-full bg-gray-700 text-white text-[10px]">🔒</span>
                     )}
+                    {item.mediaUrl && (
+                      <span className="inline-flex px-1.5 py-0.5 rounded-full text-[10px]" style={{ background: 'var(--c1)', color: '#fff' }}>
+                        {item.mediaType === 'video' ? '🎬' : '🖼'}
+                      </span>
+                    )}
                   </h3>
                   <p className="text-sm leading-relaxed" style={{ color: 'var(--text-light)' }}>{item.description}</p>
+                  {renderMedia(item)}
                   {/* 操作按钮 */}
                   {isAuthenticated && (
                     <div className="flex gap-2 mt-4 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -1872,10 +1970,16 @@ function TimelinePage({ isAuthenticated }: { isAuthenticated: boolean }) {
                       </button>
                       <button
                         onClick={() => {
-                          const newTitle = prompt('修改标题', item.title)
-                          const newDesc = prompt('修改描述', item.description)
-                          if (newTitle !== null) updateTimelineItem(item.id, { title: newTitle })
-                          if (newDesc !== null) updateTimelineItem(item.id, { description: newDesc })
+                          setFormData({
+                            date: item.date,
+                            title: item.title,
+                            description: item.description,
+                            isPrivate: item.isPrivate,
+                          })
+                          setFormMediaUrl(item.mediaUrl || null)
+                          setFormMediaType(item.mediaType || null)
+                          setEditingId(item.id)
+                          setShowForm(true)
                         }}
                         className="px-3 py-1 rounded-lg text-xs"
                         style={{ border: '1px solid var(--border)' }}
@@ -1907,6 +2011,7 @@ function TimelinePage({ isAuthenticated }: { isAuthenticated: boolean }) {
     </div>
   )
 }
+
 
 /* ════════════════════════════════════════════════
    情书页
@@ -2166,6 +2271,13 @@ function AppContent() {
   }
 
   const isAuthenticated = mode === 'authenticated'
+
+  // 访客模式隐藏情书页，直接跳转首页
+  useEffect(() => {
+    if (currentPage === 'letters' && !isAuthenticated) {
+      setCurrentPage('home')
+    }
+  }, [currentPage, isAuthenticated])
 
   return (
     <div className="min-h-screen" style={{ background: 'var(--bg)', color: 'var(--text)' }}>

@@ -50,6 +50,8 @@ export interface TimelineItem {
   title: string
   description: string
   isPrivate: boolean
+  mediaUrl?: string
+  mediaType?: 'image' | 'video'
 }
 
 export interface Letter {
@@ -230,6 +232,8 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
             title: t.title,
             description: t.description,
             isPrivate: t.is_private ?? false,
+            mediaUrl: t.media_url || undefined,
+            mediaType: t.media_type || undefined,
           })),
           letters: (lettersRes.data || []).map(l => ({
             id: l.id,
@@ -477,13 +481,27 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   // 时间线
   const addTimelineItem = (item: TimelineItem) => {
     setData(d => ({ ...d, timeline: [...d.timeline, item] }))
-    supabaseUpsert('timeline', { id: item.id, date: item.date, title: item.title, description: item.description })
+    supabaseUpsert('timeline', {
+      id: item.id,
+      date: item.date,
+      title: item.title,
+      description: item.description,
+      media_url: item.mediaUrl || null,
+      media_type: item.mediaType || null,
+    })
   }
 
   const updateTimelineItem = (id: string, item: Partial<TimelineItem>) => {
     setData(d => ({ ...d, timeline: d.timeline.map(t => (t.id === id ? { ...t, ...item } : t)) }))
     const current = data.timeline.find(t => t.id === id)
-    if (current) supabaseUpsert('timeline', { id, date: current.date, title: current.title, description: current.description })
+    if (current) supabaseUpsert('timeline', {
+      id,
+      date: current.date,
+      title: current.title,
+      description: current.description,
+      media_url: current.mediaUrl || null,
+      media_type: current.mediaType || null,
+    })
   }
 
   const removeTimelineItem = (id: string) => {
